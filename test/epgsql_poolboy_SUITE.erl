@@ -48,11 +48,17 @@ transaction(_Config) ->
     InTransaction =
         fun(C) ->
                 {ok, _, Rows} = pgsql:equery(C, "SELECT * FROM test_database"),
-                Next = lists:max([N || {N} <- Rows]) + 1,
+                Next =
+                    case Rows of
+                        [] -> 0;
+                        [_|_] ->
+                            lists:max([N || {N} <- Rows]) + 1
+                    end,
                 {ok, 1} = pgsql:equery(C, "INSERT INTO test_database VALUES($1)", [Next])
         end,
 
-    epgsql_poolboy:with_transaction(PoolName, InTransaction),
+    {ok, 1} = epgsql_poolboy:with_transaction(PoolName, InTransaction),
+    {ok, 1} = epgsql_poolboy:with_transaction(PoolName, postgrestest, InTransaction, 5000),
     ok = epgsql_poolboy:stop_pool(PoolName),
     false = is_process_alive(Pid).
 

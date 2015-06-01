@@ -22,6 +22,7 @@
 -export([sync/2]).
 -export([with_transaction/2]).
 -export([with_transaction/3]).
+-export([with_transaction/4]).
 
 -include("defaults.hrl").
 
@@ -98,14 +99,20 @@ with_transaction(PoolNameOrAtom, F) ->
     with_transaction(PoolNameOrAtom, F, ?TIMEOUT).
 
 with_transaction(PoolNameOrAtom, F, Timeout) ->
-    exec(PoolNameOrAtom, {with_transaction, [F]}, Timeout).
+    with_transaction(PoolNameOrAtom, unnamed, F, Timeout).
 
+with_transaction(PoolNameOrAtom, QueryName, F, Timeout) ->
+    exec(PoolNameOrAtom, QueryName, {with_transaction, [F]}, Timeout).
 
-exec(Worker, Args, Timeout) when is_pid(Worker) ->
+exec(Worker, Args, Timeout) ->
+    exec(Worker, unnamed, Args, Timeout).
+
+exec(Worker, _QueryName, Args, Timeout) when is_pid(Worker) ->
     gen_server:call(Worker, Args, Timeout);
-exec(PoolName, Args, Timeout) ->
+exec(PoolName, QueryName, Args, Timeout) ->
     PoolNameBin = atom_to_binary(PoolName, latin1),
-    BaseMetricName = [<<"epgsql_poolboy.">>, PoolNameBin, stat(Args)],
+    QueryNameBin = atom_to_binary(QueryName, latin1),
+    BaseMetricName = [<<"epgsql_poolboy.">>, PoolNameBin, ".", QueryNameBin, stat(Args)],
     NameTimer = list_to_binary(BaseMetricName),
     NameSpiral = list_to_binary([<<"epgsql_poolboy.">>, PoolNameBin, stat(Args), ".counter"]),
     Fun = fun(Worker) ->
