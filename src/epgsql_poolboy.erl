@@ -122,7 +122,7 @@ exec(PoolName, QueryName, Args, Timeout) ->
                   ok = quintana:notify_spiral({NameSpiral, 1}),
                   Res
           end,
-    poolboy:transaction(PoolName, Fun).
+    poolboy:transaction(PoolName, Fun, Timeout).
 
 stat({F, _}) when is_atom(F) ->
     append_stat(F);
