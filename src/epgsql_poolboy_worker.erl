@@ -26,11 +26,11 @@ start_link(Args) ->
     gen_server:start_link(?MODULE, Args, []).
 
 connect(Host, undefined, undefined, Opts) ->
-    pgsql:connect(Host, Opts);
+    epgsql:connect(Host, Opts);
 connect(Host, Username, undefined, Opts) ->
-    pgsql:connect(Host, Username, Opts);
+    epgsql:connect(Host, Username, Opts);
 connect(Host, Username, Password, Opts) ->
-    pgsql:connect(Host, Username, Password, Opts).
+    epgsql:connect(Host, Username, Password, Opts).
 
 try_connect(#state{conn=undefined, host=Host, username=Username,
                    password=Password, opts=Opts}) ->
@@ -54,11 +54,11 @@ init(Args) ->
         {ok, Pid} ->
             {ok, BaseState#state{conn=Pid}};
         {error, econnrefused} ->
-            error_logger:error_msg("Connection to pgsql failed: ~p", [Host]),
+            error_logger:error_msg("Connection to epgsql failed: ~p", [Host]),
             erlang:send_after(?TIMEOUT, self(), reconnect),
             {ok, BaseState};
         {error, Reason} ->
-            error_logger:error_msg("Unhandled error connecting to pgsql: ~p, Host: ~p", [Reason, Host]),
+            error_logger:error_msg("Unhandled error connecting to epgsql: ~p, Host: ~p", [Reason, Host]),
             erlang:send_after(?TIMEOUT, self(), reconnect),
             {ok, BaseState}
     end.
@@ -81,7 +81,7 @@ handle_cast(_Msg, State) ->
     {stop, unhandled_cast, State}.
 
 terminate(_Reason, #state{conn=Conn}) ->
-    ok = pgsql:close(Conn).
+    ok = epgsql:close(Conn).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -100,9 +100,9 @@ handle_info(_, State) ->
 %% Internal
 
 mapply(F, Conn) when is_atom(F) ->
-    pgsql:F(Conn);
+    epgsql:F(Conn);
 mapply({F, Args}, Conn) ->
-    apply(pgsql, F, [Conn|Args]).
+    apply(epgsql, F, [Conn|Args]).
 
 handle_call_reply(Reply, State) ->
     {reply, Reply, State}.

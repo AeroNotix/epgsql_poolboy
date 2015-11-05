@@ -14,7 +14,7 @@ start_link() ->
 
 -spec
 start_pool(atom(), proplists:proplist(), proplists:proplist()) ->
-    {ok, pid()}.
+    {ok, pid()} | {error, Reason :: term()}.
 start_pool(Name, SizeArgs, WorkerArgs) when is_atom(Name) ->
     supervisor:start_child(?MODULE, [Name, SizeArgs, WorkerArgs]).
 
